@@ -28,12 +28,8 @@ docker push $DOCKER_USERNAME/product-service
 
 2. Create the cluster
 ```shell
-k3d cluster create first-cluster -s 1 -a 2 -p "8080:80@loadbalancer"
+k3d cluster create first-cluster -s 1 -a 2
 ```
-> 📘 **Info**  
-> It is important to specify the port mapping in the command. This routes the traffic from port 8080 on your localhost (which can be any available port) to port 80 of the Kubernetes load balancer placed inside the internal Docker network.  
-> This is needed in order to make Ingress work.
-
 
 3. Create Postgres Deployment
 ```shell
@@ -69,11 +65,18 @@ kubectl expose deployment product-service --port=8080
 ```shell
 kubectl create ingress chassis-demo-ingress --rule="chassis.local/*=product-service:8080"
 ```
+
+Get the Ingress IP with
+```shell
+kubectl get ingresses
+```
+
 > 📘 **Info**  
 > This will route any request aimed at the domain `chassis.local` to the `product-service` Service on port 8080.
 
 > 💡 **Tip**: Local DNS Resolution  
-> To test this locally in your browser or via terminal, you will need to map chassis.local to your local machine. You can do this by adding `127.0.0.1 chassis.local` to your `/etc/hosts` file.
+> To test this locally in your browser or via terminal, you will need to map chassis.local to your local machine. 
+> You can do this by adding `INGRESS_IP chassis.local` to your `/etc/hosts` file.
 
 You can verify that everything is working properly both from Headlamp and from kubectl command line:
 ```shell
