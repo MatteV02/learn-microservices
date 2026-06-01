@@ -97,7 +97,8 @@ spec:
   selector:
     app: product-service
   ports:
-    - port: 8080
+    - name: http-alt
+      port: 8080
       targetPort: 8080
 
 ---

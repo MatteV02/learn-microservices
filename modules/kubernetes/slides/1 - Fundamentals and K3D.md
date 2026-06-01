@@ -16,6 +16,45 @@ Kubernetes (Greek for helmsman) is a software system for automating the deployme
 ### The Kubernetes Architecture
 
 A Kubernetes cluster is fundamentally divided into two groups of machines: the **Control Plane** (hosted on master nodes) and the **Workload Plane** (hosted on worker nodes).
+```mermaid
+graph TD
+%% Define Actors
+    Engineers(["Engineers / External Components"])
+    Clients(["Clients / End Users"])
+
+%% Control Plane Subgraph
+    subgraph Control_Plane["Control Plane (Master Nodes)"]
+        direction TB
+        API_Server["API Server<br/>(RESTful API Gateway)"]
+        etcd[("etcd<br/>(Distributed Datastore)")]
+        Scheduler["Scheduler<br/>(Node Assigner)"]
+        Controllers["Controllers<br/>(State Monitors)"]
+
+    %% Internal Control Plane Communication
+        API_Server <-->|"Reads/Writes state"| etcd
+        API_Server <-->|"Watches for unscheduled pods"| Scheduler
+        API_Server <-->|"Monitors objects & state"| Controllers
+    end
+
+%% Workload Plane Subgraph
+    subgraph Workload_Plane ["Workload Plane (Worker Nodes)"]
+        direction TB
+        Kubelet["Kubelet<br/>(Node Agent)"]
+        Kube_Proxy["Kube Proxy<br/>(Network/Load Balancer)"]
+        Runtime["Container Runtime<br/>(Application Pods)"]
+
+    %% Internal Worker Node Flow
+        Kubelet -->|"Instructs to run containers"| Runtime
+        Kube_Proxy -->|"Routes traffic to application instances"| Runtime
+    end
+
+%% Management & Control Traffic Flow
+    Engineers -->|"Management API Requests"| API_Server
+    API_Server <-->|"Manages node / Reports status"| Kubelet
+
+%% Application Request Flow
+    Clients -->|"Client Requests (App/Web Traffic)"| Kube_Proxy
+```
 
 #### Control Plane Components (Master Nodes)
 
@@ -78,6 +117,11 @@ While powerful, Kubernetes is not the right choice for every organization or app
 2. **Not for Monoliths** – If an application is a large, tightly-coupled monolith, Kubernetes provides no architectural benefits.
 3. **Overkill for Small Systems** – Systems containing fewer than five microservices may find the added complexity and resource overhead of Kubernetes outweighs its automation benefits.
 4. **Initial Cost Investment** – Introducing Kubernetes requires upfront investments in engineering time for training, building new tools, and procuring additional computing resources for the cluster overhead itself.
+
+> ❓ **When to use Kubernetes?**  
+> Kubernetes excels in high complexity scenarios like a geographically distributed hybrid cloud.  
+> Consider using **simpler solutions** in less complex scenarios (like Docker Swarm for a small on-premise private cloud or 
+> Slurm for batch HPC applications).
 
 ## `kubectl`
 `kubectl` (often pronounced `kube-control` or `kube-cuddle`) is the primary CLI tool for managing a Kubernetes cluster.

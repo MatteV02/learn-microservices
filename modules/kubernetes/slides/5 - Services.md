@@ -44,21 +44,16 @@ Kubernetes clusters run an internal DNS server (usually CoreDNS). This allows po
 human-readable domain names instead of memorizing cluster IPs.
 
 Here is a practical example to prove how this works:
-**Step 1: Create a basic pod and expose it**
-```shell
-kubectl run webserver --image=nginx --labels="app=webserver" --port=80
-kubectl expose pod webserver --name=webserver-service --port=80
-```
 
-**Step 2: Run a temporary testing container**
+**Step 1: Run a temporary testing container**
 ```shell
 kubectl run -it --rm dns-test --image=giantswarm/tiny-tools -- sh
 ```
 
-**Step 3: Resolve and curl the service from inside the test container**
+**Step 2: Resolve and curl the service from inside the test container**
 ```shell
-curl http://quiz-service
-nslookup quiz-service
+curl http://product-service:8080/info
+nslookup product-service
 ```
 
 Because of the internal DNS, the test pod seamlessly translates http://quiz-service to the service's internal cluster IP.
@@ -67,7 +62,7 @@ Because of the internal DNS, the test pod seamlessly translates http://quiz-serv
 A common misconception when debugging Kubernetes networking is attempting to ping a service.
 If you are inside your testing pod and you run:
 ```shell
-ping quiz-service
+ping product-service
 ```
 You will experience **100% packet loss**.
 > ❓ **Why?**   
@@ -190,8 +185,7 @@ Service spec to give you more granular control over how the load balancer behave
 apiVersion: v1
 kind: Service
 metadata:
-  name: kiada-advanced-lb
-  namespace: kiada
+  name: chassis-advanced-lb
   # Note: Cloud providers often require specific annotations in addition to the spec fields
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "external"
@@ -215,7 +209,7 @@ spec:
   
   # Standard service routing
   selector:
-    app: kiada
+    app: product-service
   ports:
   - name: http
     port: 80
@@ -248,17 +242,26 @@ kubectl run -it --rm dns-test --image=giantswarm/tiny-tools -- sh
 ```shell
 nslookup SERVICE-NAME.NAMESPACE.svc.cluster.local
 ```
+- usually namespace is `default`
+
+**Example**
+```shell
+nslookup product-service.default.svc.cluster.local
+```
 
 3. **Inspecting SRV Records**
 While A records resolve to IP addresses, SRV (Service) records resolve to the specific ports exposed by the service. 
 This is incredibly useful for dynamic service discovery, where an application needs to know both the IP and the port to 
 connect to.  
 The FQDN for a Kubernetes SRV record follows this strict pattern:  
-`_<port-name>._<protocol>.<service-name>.<namespace>.svc.cluster.local`  
+`_PORTNAME._PROTOCOL.SERVICENAME.NAMESPACE.svc.cluster.local`  
 Let's assume our quote service exposes a TCP port named http.
+- PORTNAME is defined in service YAML
+
+**Example**
 ```shell
-nslookup -query=SRV kiada
-nslookup -query=SRV _http._tcp.quote.kiada.svc.cluster.local
+nslookup -query=SRV product-service
+nslookup -query=SRV _http._tcp.product-service.default.svc.cluster.local
 ```
 
 ## 7. CNAME Alias and ExternalName Service
@@ -364,13 +367,13 @@ only when the probe succeeds again.
 apiVersion: v1
 kind: Pod
 metadata:
-  name: quiz-api
+  name: backend-api
   labels:
-    app: quiz
+    app: backend
 spec:
   containers:
-  - name: quiz-api
-    image: my-quiz-app:1.0
+  - name: backend-api
+    image: backend:1.0
     ports:
     - containerPort: 8080
     

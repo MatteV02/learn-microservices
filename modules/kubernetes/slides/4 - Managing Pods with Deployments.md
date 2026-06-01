@@ -1,8 +1,8 @@
 # 4 - Managing Pods with deployments
 A **Deployment** is a Kubernetes API object that allows you to declare the desired state of your application, delegating the 
-complex mechanics of getting to that state to Kubernetes itself.
+complex mechanics of getting to that state to Kubernetes itself.  
 While you can run applications by creating individual Pods, managing them manually during updates or node failures is 
-impractical. Deployments solve this by providing declarative updates, horizontal scaling, and self-healing mechanisms. 
+impractical. Deployments solve this by providing declarative updates, horizontal scaling, and self-healing mechanisms.  
 Rather than manually replacing old Pods with new ones, you simply update the Deployment configuration, and the Kubernetes 
 Deployment controller automates the transition at a controlled rate. Because Deployments treat individual Pods as fungible 
 (easily replaceable) replicas, they are the standard choice for running stateless workloads.
@@ -50,7 +50,7 @@ count on the underlying ReplicaSet. The ReplicaSet controller then provisions or
 
 **Example**:
 ```shell
-kubectl scale deployment nginx-deployment --replicas 5
+kubectl scale deployment product-service --replicas 5
 ```
 
 ```mermaid
