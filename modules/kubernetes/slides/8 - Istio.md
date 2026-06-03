@@ -165,23 +165,43 @@ sudo apt-get install helm
 k3d cluster create --api-port 6550 --agents 2 --k3s-arg '--disable=traefik@server:*' istio-cluster
 ```
 
-2. Determine the Docker Network Subnet
+2. Install `istio` with `k3d`
+```shell
+helm install istio-base istio/base -n istio-system --set defaultRevision=default --wait --create-namespace
+```
+
+3. Install **Istio Discovery**
+```shell
+helm install istiod istio/istiod -n istio-system --wait
+```
+
+4. Verify installation of `istiod`
+```shell
+helm status istiod -n istio-system
+```
+
+5. Enable automatic sidecar injection
+```shell
+kubectl label namespace default istio-injection=enabled
+```
+
+6. Determine the Docker Network Subnet
 ```shell
 docker network inspect k3d-istio-cluster | grep Subnet
 ```
 
-3. Install `MetalLB` with Helm (see [MetalLB website](https://metallb.io/installation/)):
+7. Install `MetalLB` with Helm (see [MetalLB website](https://metallb.io/installation/)):
 ```shell
 helm repo add metallb https://metallb.github.io/metallb
 helm repo update
-helm install metallb metallb/metallb -n metallb-system --create-namespace
+helm install metallb metallb/metallb -n metallb-system --wait --create-namespace
 ```
 
 > ❓ **Why installing MetalLB?**  
-> "Vanilla" `k3d` does not emulate the scendario where Istio excels: **complex cloud environments**.  
+> "Vanilla" `k3d` does not emulate the scenario where Istio excels: **complex cloud environments**.  
 > It is necessary to install a LoadBalancer provider on the cluster for best cloud environment emulation.
 
-4. Create a file named `metallb-config.yaml`. **Make sure the addresses fall within the Docker subnet you found in Step 2**.
+8. Create a file named `metallb-config.yaml`. **Make sure the addresses fall within the Docker subnet you found in Step 2**.
 ```yaml
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
@@ -199,41 +219,14 @@ metadata:
   namespace: metallb-system
 ```
 
-5. Apply configuration
+9. Apply configuration
 ```shell
 kubectl apply -f metallb-config.yaml
 ```
 
-6. Install `istio` with `k3d`
-```shell
-helm install istio-base istio/base -n istio-system --set defaultRevision=default --create-namespace
-```
-
-7. Install **Istio Discovery**
-```shell
-helm install istiod istio/istiod -n istio-system --wait
-```
-
-8. Verify installation of `istiod`
-```shell
-helm status istiod -n istio-system
-```
-
-9. Enable automatic sidecar injection
-```shell
-kubectl label namespace default istio-injection=enabled
-```
-
 10. Install **Istio Ingress**
 ```shell
-helm install istio-ingress istio/gateway -n istio-ingress --wait --create-namespace
-```
-
-11. Install **Istio Gateways**
-```shell
-helm install istio-ingressgateway istio/gateway -n istio-ingress --wait
-kubectl get crd gateways.gateway.networking.k8s.io &> /dev/null || \
-  { kubectl kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v1.1.0" | kubectl apply -f -; }
+helm install istio-ingressgateway istio/gateway -n istio-ingress --wait --create-namespace
 ```
 
 ## Run the Grafana dashboard on the cluster

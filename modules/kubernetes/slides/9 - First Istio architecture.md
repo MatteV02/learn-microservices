@@ -120,77 +120,82 @@ spec:
             periodSeconds: 10
 ```
 
-To route external traffic into the cluster, we use the modern Kubernetes Gateway API (supported natively by Istio). A 
-`Gateway` handles the entry point (replacing standard Ingress objects), and an `HTTPRoute` directs the traffic to the 
-corresponding microservices based on the requested path.
+To route external traffic into the cluster, we use Istio Gateway API. A `Gateway` handles the entry point (replacing 
+standard Ingress objects), and an `VirtualService` directs the traffic to the corresponding microservices based on the 
+requested path.
 
 ```yaml
-apiVersion: gateway.networking.k8s.io/v1
+apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
-  name: app-gateway
+   name: app-gateway
 spec:
-  gatewayClassName: istio
-  listeners:
-  - name: http
-    port: 80
-    protocol: HTTP
-    allowedRoutes:
-      namespaces:
-        from: Same
+   selector:
+      istio: ingressgateway
+   servers:
+      - port:
+           number: 80
+           name: http
+           protocol: HTTP
+        hosts:
+           - "*"
 ---
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+apiVersion: networking.istio.io/v1
+kind: VirtualService
 metadata:
-  name: app-routing
+   name: app-routing
 spec:
-  parentRefs:
-    - name: app-gateway
-  rules:
-    # Route /users to user-service
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /users
-      backendRefs:
-        - name: user-service
-          port: 8080
+   hosts:
+      - "*"
+   gateways:
+      - app-gateway
+   http:
+      # 1. The BFF Route
+      - match:
+           - uri:
+                prefix: /bff
+        route:
+           - destination:
+                host: bff-service
+                port:
+                   number: 8080
 
-    # Route /posts to post-service
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /posts
-      backendRefs:
-        - name: post-service
-          port: 8080
+      # 2. The Users Route
+      - match:
+           - uri:
+                prefix: /users
+        route:
+           - destination:
+                host: user-service
+                port:
+                   number: 8080
 
-    # Route /comments to comment-service
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /comments
-      backendRefs:
-        - name: comment-service
-          port: 8080
+      # 3. The Posts Route
+      - match:
+           - uri:
+                prefix: /posts
+        route:
+           - destination:
+                host: post-service
+                port:
+                   number: 8080
 
-    # Route /bff to bff-service
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /bff
-      backendRefs:
-        - name: bff-service
-          port: 8080
+      # 4. The Comments Route
+      - match:
+           - uri:
+                prefix: /comments
+        route:
+           - destination:
+                host: comment-service
+                port:
+                   number: 8080
 
-    # Default catch-all route fallback
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - name: bff-service
-          port: 8080
+      # 5. Default catch-all route fallback
+      - route:
+           - destination:
+                host: bff-service
+                port:
+                   number: 8080
 ```
 
 # The new architecture
@@ -203,7 +208,7 @@ graph LR
 
     subgraph ClusterInfra ["Kubernetes & Istio Infrastructure"]
         Gateway["Istio Gateway<br/>(app-gateway:80)"]
-        HTTPRoute["HTTPRoute<br/>(app-routing)"]
+        HTTPRoute["VirtualService<br/>(app-routing)"]
         CoreDNS["CoreDNS<br/>(Internal Service Discovery)"]
         
         

@@ -16,19 +16,24 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: bff-service
+  labels:
+    app: bff-service
+    version: v1
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: bff-service
+      version: v1
   template:
     metadata:
       labels:
         app: bff-service
+        version: v1
     spec:
       containers:
         - name: bff-service
-          image: mattev02/bff-service:latest
+          image: mattev02/bff-service:v1
           ports:
             - containerPort: 8080
           env:
