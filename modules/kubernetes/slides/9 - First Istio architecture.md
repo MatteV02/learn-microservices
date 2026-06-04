@@ -1,7 +1,7 @@
-# 9 - First Istio application
+# 9 - First Istio architecture
 In this lesson, you will learn how to use Istio instead of Eureka and Nginx in the `service-routing` example.
 Indeed, Kubernetes CoreDNS can seamlessly replace Eureka for service discovery, while the Istio Gateway can replace the 
-Nginx reverse proxy. In addition, Istio provides secure communication between pods (mTLS) and powerful observability 
+Nginx reverse proxy. In addition, Istio provides secure communication between pods (**mTLS**) and powerful observability 
 out of the box.  
 
 **service-routing system**
