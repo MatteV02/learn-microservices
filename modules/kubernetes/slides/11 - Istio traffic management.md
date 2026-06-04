@@ -37,6 +37,42 @@ spec:
       credentialName: ext-host-cert
 ```
 
+```mermaid
+graph TD
+    %% External Traffic Source
+    Client([External Client]) 
+    
+    %% Gateway Section
+    subgraph "Edge of the Mesh"
+        GW["Istio Gateway<br/>(Standalone Envoy Proxy)"]
+        L46["Layer 4-6 Properties:<br/>- Exposed Ports (e.g., 443)<br/>- Protocols (e.g., HTTPS)<br/>- TLS Settings"]
+        GW --- L46
+    end
+    
+    %% Internal Mesh Section
+    subgraph "Service Mesh"
+        VS["Virtual Service<br/>(Layer 7 Routing)"]
+        
+        subgraph "Application Workloads"
+            AppA["Service Pod<br/>(+ Envoy Sidecar)"]
+            AppB["Service Pod<br/>(+ Envoy Sidecar)"]
+        end
+    end
+
+    %% Traffic Flow
+    Client -- "Inbound Traffic" --> GW
+    GW -- "Binds to" --> VS
+    VS -- "Routes traffic to<br/>destinations" --> AppA
+    VS -- "Routes traffic to<br/>destinations" --> AppB
+    
+    %% Styling
+    classDef edge fill:#f9d0c4,stroke:#333,stroke-width:2px,color:#000;
+    classDef internal fill:#d4e6f1,stroke:#333,stroke-width:1px,color:#000;
+    
+    class GW edge;
+    class VS,AppA,AppB internal;
+```
+
 ## 2. Virtual Services
 Virtual services and destination rules are the primary building blocks of Istio's traffic routing functionality. A 
 `VirtualService` strongly decouples the user-facing destination that clients send requests to from the actual backend 
@@ -177,6 +213,93 @@ http:
   - **Order Matters**: You must place your most specific rules (e.g., exact header or URI matches) at the top of your VirtualService.
   - **The Catch-All Default**: The final rule in your HTTP block should almost always omit the match field entirely. This ensures that any traffic failing to trigger your specific rules still has a default destination and isn't dropped.
 
+**Example**  
+```yaml
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: dynamic-routing-service
+spec:
+  hosts:
+    - my-app.default.svc.cluster.local # The destination host clients are trying to reach
+  http:
+    # --- RULE 1: Most Specific Match (Header) ---
+    # Evaluated first. If the user is 'jason', send to v2.
+    - match:
+        - headers:
+            end-user:
+              exact: jason
+      route:
+        - destination:
+            host: my-app.default.svc.cluster.local
+            subset: v2
+
+    # --- RULE 2: URI Match with Traffic Splitting (Canary) ---
+    # Evaluated second. If the path starts with /api/v1, split 90/10.
+    - match:
+        - uri:
+            prefix: /api/v1
+      route:
+        - destination:
+            host: my-app.default.svc.cluster.local
+            subset: v1
+          weight: 90
+        - destination:
+            host: my-app.default.svc.cluster.local
+            subset: v2
+          weight: 10
+
+    # --- RULE 3: Traffic Manipulation (HTTP Redirect) ---
+    # Evaluated third. If exactly hitting /old-path, bounce them to /new-path.
+    - match:
+        - uri:
+            exact: /old-path
+      redirect:
+        uri: /new-path
+        redirectCode: 301 # 301 Moved Permanently
+
+    # --- DEFAULT RULE: Catch-All ---
+    # Evaluated last. If none of the above conditions were met, route to v3.
+    # Note the complete absence of a 'match' block here.
+    - route:
+        - destination:
+            host: my-app.default.svc.cluster.local
+            subset: v3
+```
+
+```mermaid
+graph LR
+    Client([Client Request]) --> VS[Virtual Service]
+    
+    %% Rule 1 - Most specific match
+    VS --> Rule1{Rule 1 Match: <br/>Header 'end-user: jason'?}
+    Rule1 -- Yes --> Route1[Route to subset: v2]
+    
+    %% Rule 2 - URI Match with Traffic Splitting
+    Rule1 -- No --> Rule2{Rule 2 Match: <br/>URI prefix '/api/v1'?}
+    Rule2 -- Yes --> Split{Weighted Routing}
+    Split -- Weight: 90 --> Route2A[Route to subset: v1]
+    Split -- Weight: 10 --> Route2B[Route to subset: v2]
+    
+    %% Rule 3 - Traffic Manipulation
+    Rule2 -- No --> Rule3{Rule 3 Match: <br/>URI exact '/old-path'?}
+    Rule3 -- Yes --> Redirect[HTTP Redirect 301 <br/> to /new-path]
+    
+    %% Default Rule
+    Rule3 -- No --> Default{Default Route <br/> no match condition}
+    Default --> Route3[Route to subset: v3]
+    
+    %% Destinations resolving to DestinationRules
+    Route1 -.-> DR[DestinationRule]
+    Route2A -.-> DR
+    Route2B -.-> DR
+    Route3 -.-> DR
+    
+    %% Final Pods
+    DR -.-> PodsV1[(v1 Pods)]
+    DR -.-> PodsV2[(v2 Pods)]
+    DR -.-> PodsV3[(v3 Pods)]
+```
 
 ## 3. Destination Rule
 If Virtual Services determine where traffic is routed, Destination Rules configure what happens to the traffic once it 
