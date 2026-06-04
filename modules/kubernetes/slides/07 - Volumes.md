@@ -103,6 +103,20 @@ volumes:
       claimName: quiz-data-claim
 ```
 
+The `PersistentVolumeClaim` is described as follows.
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: quiz-data-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+```
+
 ### 4.1 PersistentVolume access mode
 When a Persistent Volume is created, it advertises how it can be accessed across the cluster's worker nodes.
 
@@ -125,17 +139,28 @@ RWO means a single **worker node** can attach the volume in read/write mode.
 
 #### 4.2.2. Cross-Node Concurrency Blockers
 If a volume is attached to Node A in read/write mode, Kubernetes will strictly block Node B from attaching it.
-- **The `FailedAttachVolume` Error**: If you deploy a group of writer Pods across multiple nodes sharing a single RWO volume, only the Pods on the first node will run. Pods on other nodes will be permanently stuck in a ContainerCreating state with a RESOURCE_IN_USE_BY_ANOTHER_RESOURCE error.
-- **Mixed Read/Write Blocking**: If a volume supports both RWO and ReadOnlyMany (ROX), and Node A mounts it for a writer Pod, Node B cannot mount it even for a read-only Pod. The read/write lock on Node A prevents any other node from accessing the volume until the writer Pod is terminated and the volume is detached.
+- **The `FailedAttachVolume` Error**: If you deploy a group of writer Pods across multiple nodes sharing a single RWO 
+  volume, only the Pods on the first node will run. Pods on other nodes will be permanently stuck in a ContainerCreating 
+  state with a `RESOURCE_IN_USE_BY_ANOTHER_RESOURCE` error.
+- **Mixed Read/Write Blocking**: If a volume supports both RWO and ReadOnlyMany (ROX), and Node A mounts it for a writer 
+  Pod, Node B cannot mount it even for a read-only Pod. The read/write lock on Node A prevents any other node from 
+  accessing the volume until the writer Pod is terminated and the volume is detached.
 
 #### 4.2.3 Architectural Best Practice: Designing Distributed State
 Because of these strict concurrency rules, developers must adopt specific architectural patterns when deploying stateful applications:
-- **Avoid Shared Read/Write Volumes**: replicas of the same pod typically can’t use the same network volume in read/write mode. You should generally avoid designing applications that expect a shared, distributed file system for concurrent writes, unless you are specifically utilizing storage that natively supports ReadWriteMany (RWX), such as an NFS share.
-- **One Volume Per Replica**: Instead of sharing a single PVC among multiple replicas, the best practice for stateful distributed applications (like MongoDB or Cassandra) is to ensure each Pod instance gets its own dedicated network storage volume. (Kubernetes automates this pattern using StatefulSets, a concept introduced in later chapters).
-- **Decouple Writers from Readers**: If you must use a shared volume for a read-heavy application, ensure your writer Pods execute and terminate (e.g., using an Init Container or a Job) before spinning up your reader Pods. Once the writers release the volume, multiple nodes can concurrently attach the volume in ROX mode, allowing reader Pods to scale horizontally across the entire cluster without issue.
+- **Avoid Shared Read/Write Volumes**: replicas of the same pod typically can’t use the same network volume in read/write 
+  mode. You should generally avoid designing applications that expect a shared, distributed file system for concurrent 
+  writes, unless you are specifically utilizing storage that natively supports ReadWriteMany (RWX), such as an NFS share.
+- **One Volume Per Replica**: Instead of sharing a single PVC among multiple replicas, the best practice for stateful 
+  distributed applications (like MongoDB or Cassandra) is to ensure each Pod instance gets its own dedicated network 
+  storage volume. (Kubernetes automates this pattern using StatefulSets, a concept introduced in later chapters).
+- **Decouple Writers from Readers**: If you must use a shared volume for a read-heavy application, ensure your writer 
+  Pods execute and terminate (e.g., using an Init Container or a Job) before spinning up your reader Pods. Once the 
+  writers release the volume, multiple nodes can concurrently attach the volume in ROX mode, allowing reader Pods to 
+  scale horizontally across the entire cluster without issue.
 
 ### 4.3 Dynamic Provisioning of Persistent Volumes
-In large clusters, a system administrator cannot manually provision a PersistentVolume every time a developer requests a 
+In large clusters, a system administrator cannot manually provision a `PersistentVolume` every time a developer requests a 
 PVC. This bottleneck is solved via **Dynamic Provisioning**.
 
 Using a **StorageClass** object, an administrator configures an automated volume provisioner (e.g., `kubernetes.io/gce-pd` 
@@ -143,4 +168,5 @@ for Google or `k8s.io/minikube-hostpath` for local testing).
 
 When a developer submits a PVC, they specify the desired `storageClassName`. If a match is found, Kubernetes intercepts 
 the request, dynamically reaches out to the cloud provider's API, provisions a new physical disk of the exact requested 
-size, wraps it in a PersistentVolume object, and binds it to the developer's claim instantly—all without human intervention.
+size, wraps it in a `PersistentVolume` object, and binds it to the developer's claim instantly—all without human 
+intervention.

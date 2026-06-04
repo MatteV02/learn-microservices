@@ -13,8 +13,44 @@ Kubernetes is like an Operating System for your cluster. Just as an OS manages p
 | **Volume**                      | Filesystem            | A directory accessible to the containers in a Pod, abstracting the underlying storage. It allows data persistence beyond a single container's crash and allows containers in a Pod to share files.              |
 | **Ingress**                     | Reverse Proxy         | Manages external access into the cluster, typically HTTP/HTTPS. It acts like an OS-level reverse proxy (e.g., NGINX) routing incoming public traffic to specific internal Services based on URLs or hostnames.  |
 
+```mermaid
+graph TD
+    classDef osAnalogue fill:#f9f9f9,stroke:#333,stroke-width:1px,font-style:italic;
+    classDef k8sElement fill:#326ce5,stroke:#fff,stroke-width:2px,color:#fff,font-weight:bold;
+
+    subgraph "External World"
+        User((User Traffic))
+    end
+
+    subgraph "Kubernetes Cluster"
+        Ingress["Ingress<br/><span style='font-weight:normal; font-style:italic; font-size:0.9em'>(OS Analogue: Reverse Proxy)</span>"]:::k8sElement
+        
+        Service["Service<br/><span style='font-weight:normal; font-style:italic; font-size:0.9em'>(OS Analogue: Named Pipe)</span>"]:::k8sElement
+        
+        Deployment["Deployment / ReplicaSet<br/><span style='font-weight:normal; font-style:italic; font-size:0.9em'>(OS Analogue: systemd)</span>"]:::k8sElement
+        
+        subgraph "Node Environment"
+            Pod["Pod<br/><span style='font-weight:normal; font-style:italic; font-size:0.9em'>(OS Analogue: Process)</span>"]:::k8sElement
+            
+            Container["Container<br/><span style='font-weight:normal; font-style:italic; font-size:0.9em'>(OS Analogue: Thread)</span>"]:::k8sElement
+            
+            Volume["Volume<br/><span style='font-weight:normal; font-style:italic; font-size:0.9em'>(OS Analogue: Filesystem)</span>"]:::k8sElement
+        end
+    end
+
+    %% Relationships
+    User -->|HTTP/HTTPS Request| Ingress
+    Ingress -->|Routes to| Service
+    Service -->|Provides stable IP for| Pod
+    Deployment -->|Supervises & manages| Pod
+    Pod -->|Encapsulates & runs| Container
+    Pod -->|Mounts shared storage| Volume
+    Container -.->|Shares local network & storage| Container
+```
+
 ## Chassis-demo cluster
-In the following steps, we will recreate the service described in [chassis-demo docker-compose.yaml](../../chassis/chassis-java/labs/chassis-demo/docker-compose.yaml) by using each of the elements described above. 
+In the following steps, we will recreate the service described in [chassis-demo docker-compose.yaml](../../chassis/chassis-java/labs/chassis-demo/docker-compose.yaml) by using each 
+of the elements described above. 
 
 1. First build and push your product-service container on Docker Hub
 ```shell
@@ -37,7 +73,9 @@ kubectl create deployment postgres --image=postgres:17-alpine
 kubectl set env deployment/postgres POSTGRES_USER=user POSTGRES_PASSWORD=secret POSTGRES_DB=jdbc_schema
 ```
 > 📘 **Info**  
-> Postgres and the Product Service container will be managed in two separate Deployments. This is best practice since it is often necessary to scale the frontend and backend of a service differently. The Kubernetes Deployment object automatically defines a Pod and its associated containers.
+> Postgres and the Product Service container will be managed in two separate Deployments. This is best practice since it 
+> is often necessary to scale the frontend and backend of a service differently. The Kubernetes Deployment object automatically 
+> defines a Pod and its associated containers.
 
 > ⚠️ **Warning**  
 > For now the database will be run without a Volume attached. This is critical in production environment since this makes the data ephimeral.
@@ -48,7 +86,8 @@ To create a service you can use `kubectl expose` command.
 kubectl expose deployment postgres --port=5432
 ```
 > 📘 **Info**: Kubernetes DNS  
-> By exposing this deployment, Kubernetes creates an internal DNS entry named postgres. Any other application in the cluster can now reach the database simply by pointing to postgres:5432 — exactly like Docker Compose!
+> By exposing this deployment, Kubernetes creates an internal DNS entry named postgres. Any other application in the 
+> cluster can now reach the database simply by pointing to postgres:5432 — exactly like Docker Compose!
 
 6. Create `product-service` Deployment
 ```shell
@@ -90,21 +129,30 @@ kubectl get svc
 kubectl get ingress
 ```
 
-As you might have noticed, using imperative commands has its limits. For instance, it becomes incredibly difficult to manage multi-container deployments and volumes this way, and the commands become long and hard to maintain very quickly.  
+As you might have noticed, using imperative commands has its limits. For instance, it becomes incredibly difficult to 
+manage multi-container deployments and volumes this way, and the commands become long and hard to maintain very quickly.  
 A more robust and scalable way to manage a Kubernetes cluster is by writing declarative **YAML configuration files**.
 
 ## Kubernetes YAML Structure
-Before we dive into a full configuration file, it is essential to understand its basic anatomy. No matter how complex a Kubernetes object gets, almost every YAML file is built around four foundational root fields:
-* `apiVersion`: Specifies which version of the Kubernetes API you are using to create the object (e.g., v1, apps/v1). Different resources live under different API groups.
+Before we dive into a full configuration file, it is essential to understand its basic anatomy. No matter how complex a 
+Kubernetes object gets, almost every YAML file is built around four foundational root fields:
+* `apiVersion`: Specifies which version of the Kubernetes API you are using to create the object (e.g., v1, apps/v1). 
+  Different resources live under different API groups.
 * `kind`: Defines the type of resource you want to create, such as a Deployment, Service, or PersistentVolumeClaim.
 * `metadata`: Contains data used to uniquely identify the object, primarily its name and any organizational labels.
-* `spec`: Short for "specification," this is the heart of the file. It defines the desired state of the resource-like which container image to use, what ports to open, or how many replicas to run. Kubernetes will constantly monitor the cluster to ensure the actual state matches this spec.
+* `spec`: Short for "specification," this is the heart of the file. It defines the desired state of the resource-like 
+  which container image to use, what ports to open, or how many replicas to run. Kubernetes will constantly monitor the 
+  cluster to ensure the actual state matches this spec.
 
-Additionally, you will often see three dashes (`---`) used throughout these configurations. This is standard YAML syntax that separates multiple distinct documents within a single file. It allows us to bundle an entire application stack (databases, backend services, routing rules) into one deployable file.  
-As you might have noticed, using imperative commands has its limits. For instance, it becomes incredibly difficult to manage multi-container deployments and volumes this way, and the commands become long and hard to maintain very quickly.  
+Additionally, you will often see three dashes (`---`) used throughout these configurations. This is standard YAML syntax 
+that separates multiple distinct documents within a single file. It allows us to bundle an entire application stack (
+databases, backend services, routing rules) into one deployable file.  
+As you might have noticed, using imperative commands has its limits. For instance, it becomes incredibly difficult to 
+manage multi-container deployments and volumes this way, and the commands become long and hard to maintain very quickly.  
 A more robust and scalable way to manage a Kubernetes cluster is by writing declarative YAML configuration files.
 
-For example, this single configuration file replaces all the individual commands we ran in the previous steps. You can save this as chassis-demo.yaml:
+For example, this single configuration file replaces all the individual commands we ran in the previous steps. You can 
+save this as `chassis-demo.yaml`:
 ```yaml
 ---
 # 1. PersistentVolumeClaim (The request for storage)

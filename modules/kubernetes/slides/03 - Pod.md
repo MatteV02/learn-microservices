@@ -319,14 +319,24 @@ flowchart LR
     Running -. "Node/Network Failure" .-> Unknown
 ```
 
+You can examine in which status a pod is with the following command:
+```shell
+kubectl describe pod POD_NAME
+```
+
 ## 6. Pod conditions
 While phases offer a high-level summary, pod conditions specify whether a pod has reached critical milestones.
 - `PodScheduled`: Indicates if the pod has been successfully assigned to a node.
 - `Initialized`: Confirms that all init containers have run to completion successfully.
 - `ContainersReady`: Indicates that all individual containers in the pod report being ready.
-- `Ready`: Confirms the pod is fully ready to provide services to clients.
+- `Ready`: Confirms the pod is fully ready to provide services to clients (both Containers and network are ready).
 - Conditions can switch between `True`, `False`, or `Unknown`, and often provide a reason and message detailing their 
   current status.
+
+You can examine in which conditions a pod is with the following command:
+```shell
+kubectl describe pod POD_NAME
+```
 
 ## 7. Container Status
 Inside the pod's status, Kubernetes tracks the exact state of each individual container.
@@ -341,22 +351,6 @@ Kubernetes ensures self-healing by restarting containers based on the pod's rest
 - `Never`: The container is never restarted.  
 - `Exponential Back-off`: To prevent failing containers from constantly overloading the system, Kubernetes inserts an 
   exponentially increasing delay before restarting a crashed container (10s, 20s, 40s, etc.), capped at 5 minutes.
-
-Here is an example:
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: restart-policy-demo
-spec:
-  # The restartPolicy is defined at the Pod spec level
-  restartPolicy: OnFailure
-  containers:
-  - name: failing-container
-    image: busybox:1.28
-    # This command intentionally exits with an error code (1) after 5 seconds
-    command: ['sh', '-c', 'sleep 5 && exit 1']
-```
 
 ## 9. Liveness Probes
 Applications can become unresponsive (e.g., deadlocks or infinite loops) without their processes actually terminating. 

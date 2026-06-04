@@ -3,9 +3,9 @@ In Kubernetes, an Ingress is an API object that provides a way for external clie
 running inside your cluster. It operates at Layer 7 (the Application Layer) of the OSI model.
 
 The Ingress ecosystem relies on three main components:
-- The Ingress API Object: The YAML file defining your routing rules.
-- The Reverse Proxy (L7 Load Balancer): The component that physically handles incoming HTTP traffic and routes it to backend pods.
-- The Ingress Controller: The software that monitors the Kubernetes API for new Ingress objects and provisions/configures the reverse proxy accordingly.
+- The **Ingress API Object**: The YAML file defining your routing rules.
+- The **Reverse Proxy** (L7 Load Balancer): The component that physically handles incoming HTTP traffic and routes it to backend pods.
+- The **Ingress Controller**: The software that monitors the Kubernetes API for new Ingress objects and provisions/configures the reverse proxy accordingly.
 
 > ❓ **Why is Ingress useful?**
 > - **IP Conservation**: You only need a single public IP address to expose multiple services. 

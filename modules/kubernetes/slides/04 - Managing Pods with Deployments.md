@@ -48,6 +48,13 @@ Deployments do not manage Pods directly. Instead, a **Deployment manages a Repli
 creates and manages the Pods. When you scale a Deployment, the Deployment controller simply updates the desired replica 
 count on the underlying ReplicaSet. The ReplicaSet controller then provisions or terminates Pods to match that new target.
 
+Deployments can be **autoscaled** by using the following object: `HorizontalPodAutoscaler` (HPA). With HPA, you can define 
+a controller which scales up or down your application *automagically* when a specified metric (e.g. response time) differs
+from its desired value.  
+Since this object is really complex to manage and define and its usage differs completely from application to application,
+it is not explained in this guide.  
+You can find more information about it at [Kubernetes documentation - HPA](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/).
+
 **Example**:
 ```shell
 kubectl scale deployment product-service --replicas 5

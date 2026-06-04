@@ -2,14 +2,16 @@
 
 ## Introducing Kubernetes
 
-Kubernetes (Greek for helmsman) is a software system for automating the deployment and management of complex, large-scale application systems composed of computer processes running in containers. While you act as the captain deciding the system's overall direction, Kubernetes acts as the helmsman that steers the applications and reports on their operational status.
+**Kubernetes** (Greek for helmsman) is a software system for automating the deployment and management of complex, large-scale 
+application systems composed of computer processes running in containers. While you act as the captain deciding the 
+system's overall direction, Kubernetes acts as the helmsman that steers the applications and reports on their operational status.  
 ![kubernetes-logo](images/kubernetes-logo.png)
 
 ### Core Benefits of Kubernetes
 
 1. **Infrastructure Abstraction** – Kubernetes hides the details of the underlying hardware, networks, and computers from the users and applications.
 2. **Declarative Deployment** – Users describe the desired state of an application via a single manifest, and Kubernetes automatically takes the necessary steps to turn that description into a running application.
-3. **Automated Management** – The system assumes daily management tasks, such as automatically restarting failed applications or moving them to healthy nodes in the event of hardware failures.
+3. **Automated Management** – The system assumes daily management tasks, such as automatically restarting failed applications or moving them to healthy nodes in the event of hardware failures. All this without **modifying the application** (e.g. by using Resience4J).
 4. **Improved Hardware Utilization** – By dynamically deciding where to place each application based on available resources, Kubernetes tightly packs applications together to run more workloads on fewer servers.
 5. **Portability** – Because applications interact with standardized Kubernetes APIs rather than proprietary cloud provider APIs, systems can be easily moved between local data centers and various cloud providers.
 
@@ -74,7 +76,7 @@ The Workload Plane consists of the worker nodes where your actual applications (
 | Component             | Function                                                                                                             |
 |-----------------------|----------------------------------------------------------------------------------------------------------------------|
 | **Kubelet**           | An agent that communicates with the API server, manages local applications, and reports node and application status. |
-| **Container Runtime** | Software (such as Docker) that physically runs the application containers as instructed by the Kubelet.              |
+| **Container Runtime** | Software (usually `podman`) that physically runs the application containers as instructed by the Kubelet.            |
 | **Kube Proxy**        | Sets up load balancers and routes network traffic between different application instances.                           |
 
 ### Application Deployment Flow
@@ -120,8 +122,8 @@ While powerful, Kubernetes is not the right choice for every organization or app
 
 > ❓ **When to use Kubernetes?**  
 > Kubernetes excels in high complexity scenarios like a geographically distributed hybrid cloud.  
-> Consider using **simpler solutions** in less complex scenarios (like Docker Swarm for a small on-premise private cloud or 
-> Slurm for batch HPC applications).
+> Consider using **simpler solutions** in less complex scenarios (like **Docker Swarm** for a **small on-premise private cloud** or 
+> **Slurm** for **batch HPC applications**).
 
 ## `kubectl`
 `kubectl` (often pronounced `kube-control` or `kube-cuddle`) is the primary CLI tool for managing a Kubernetes cluster.
@@ -144,7 +146,7 @@ Usually, you don't have to write this file manually; tools like `k3d`, `minikube
 You don't need a full-fledged cloud environment or dedicated servers to learn Kubernetes. Several software tools allow you to run test clusters directly on your local machine:
 
 | Tool                                  | Description                                                                                                       | Pros                                                                                   | Cons                                                                                                                             |
-|---------------------------------------|:------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------|
+|---------------------------------------|-------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
 | **Docker Desktop**                    | A built-in feature of the Docker Desktop GUI that spins up a single-node cluster.                                 | Simple one-click setup via GUI; easy installation on Windows/macOS.                    | Very heavy on system resources; only supports single-node clusters.                                                              |
 | **kind** <br>*(Kubernetes in Docker)* | A CLI tool that runs standard Kubernetes by spinning up Docker containers to act as the "nodes".                  | Supports multi-node clusters; runs the full, standard version of Kubernetes.           | Network traffic inspection between nodes (e.g., using Wireshark) can be difficult.                                               |
 | **Minikube**                          | A mature CLI tool that runs a cluster inside a separate VM or using containers.                                   | Great out-of-the-box experience; highly supported with many built-in addons.           | Can be slower and resource-heavy if using the VM driver.                                                                         |

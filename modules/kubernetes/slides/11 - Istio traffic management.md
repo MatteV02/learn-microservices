@@ -6,6 +6,12 @@ service mesh without having to make any changes to your application code.
 
 Below is an overview of the core API resources and concepts used to configure Istio traffic management.
 
+> ⚠️ **Warning**  
+> Istio is transitioning to the **Kubernetes Gateway API** as its default standard. While this course focuses on the 
+> "legacy" Istio networking APIs for historical context and more mature functionalities, the Kubernetes Gateway API is 
+> now the recommended approach for new deployments. Istio plans to eventually deprecate its custom resources in favor of 
+> these unified Kubernetes standards.
+
 ## 1. Gateway
 A `Gateway` is used to manage inbound and outbound traffic for your mesh. Unlike other Envoy proxies that run as sidecars 
 next to your application workloads, gateway configurations are applied to standalone Envoy proxies operating at the edge 
@@ -74,7 +80,7 @@ graph TD
 ```
 
 ## 2. Virtual Services
-Virtual services and destination rules are the primary building blocks of Istio's traffic routing functionality. A 
+**Virtual services** and destination rules are the primary building blocks of Istio's traffic routing functionality. A 
 `VirtualService` strongly decouples the user-facing destination that clients send requests to from the actual backend 
 workloads that implement the service.
 
@@ -302,7 +308,7 @@ graph LR
 ```
 
 ## 3. Destination Rule
-If Virtual Services determine where traffic is routed, Destination Rules configure what happens to the traffic once it 
+If Virtual Services determine where traffic is routed, **Destination Rules** configure what happens to the traffic once it 
 reaches that destination. They are applied after virtual service routing rules are evaluated.
 
 ### YAML Declaration
@@ -422,7 +428,7 @@ You can inject two types of faults using a Virtual Service:
 - **Delays**: Timing failures that mimic increased network latency or overloaded upstream services.
 - **Aborts**: Crash failures that mimic upstream service failures by returning HTTP error codes.
 
-Example of injecting a 5-second delay for 0.1% of requests:
+Example of injecting a 5-second delay for 30% of requests:
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -435,8 +441,28 @@ spec:
   - fault:
       delay:
         percentage:
-          value: 0.1
+          value: 30.0
         fixedDelay: 5s
+    route:
+    - destination:
+        host: ratings
+        subset: v1
+```
+
+Example of injecting a 404 error for 30% of requests:
+```yaml
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: ratings
+spec:
+  hosts:
+  - ratings
+  http:
+  - fault:
+      abort:
+        errorCode: 404
+        percentage: 30.0
     route:
     - destination:
         host: ratings

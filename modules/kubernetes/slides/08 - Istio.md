@@ -1,12 +1,12 @@
 # 8 - Istio
 
-Istio is an open-source, independent service mesh that provides the fundamental capabilities needed to run a distributed 
+**Istio** is an open-source, independent service mesh that provides the fundamental capabilities needed to run a distributed 
 microservice architecture successfully. It acts as a dedicated infrastructure layer sitting on top of your applications, 
 controlling how different parts of an application share data with one another.  
 
 > ❓ **Why is it useful?**  
-> The primary advantage of Istio is that it delivers critical operational capabilities without requiring any changes to 
-> your application code. Instead of developers manually programming libraries for routing, encryption, or logging into 
+> The primary advantage of Istio is that it delivers **critical operational capabilities** without requiring any **changes to 
+> your application code**. Instead of developers manually programming libraries for routing, encryption, or logging into 
 > every single microservice, Istio handles these concerns transparently at the platform layer.
 
 **Key capabilities**:
@@ -18,7 +18,7 @@ controlling how different parts of an application share data with one another.
   allowing you to visualize your architecture through tools like Prometheus and Grafana.
 
 ## Istio architecture
-Istio’s architecture is split into two primary layers: the Data Plane and the Control Plane.
+Istio’s architecture is split into two primary layers: the **Data Plane** and the **Control Plane**.
 
 ### 1. The Data Plane
 The data plane consists of a network of intelligent proxies based on the open-source Envoy proxy.
@@ -199,9 +199,9 @@ helm install metallb metallb/metallb -n metallb-system --wait --create-namespace
 
 > ❓ **Why installing MetalLB?**  
 > "Vanilla" `k3d` does not emulate the scenario where Istio excels: **complex cloud environments**.  
-> It is necessary to install a LoadBalancer provider on the cluster for best cloud environment emulation.
+> It is necessary to install a `LoadBalancer` provider on the cluster for best cloud environment emulation.
 
-8. Create a file named `metallb-config.yaml`. **Make sure the addresses fall within the Docker subnet you found in Step 2**.
+8. Create a file named `metallb-config.yaml`. **Make sure the addresses fall within the Docker subnet you found in Step 6**.
 ```yaml
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
