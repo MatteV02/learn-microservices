@@ -34,7 +34,7 @@ spec:
 
 ```mermaid
 flowchart TD
-    Client([🌐 External Client]) -.->|HTTP / HTTPS| Proxy[Ingress Controller / Reverse Proxy]
+    Client(["🌐 External Client"]) -.->|HTTP / HTTPS| Proxy[Ingress Controller / Reverse Proxy]
 
     subgraph Cluster [Kubernetes Cluster]
         Proxy
@@ -135,7 +135,7 @@ spec:
             name: quote-service
             port:
               number: 80
-      ...
+      # ...
   - host: api.example.com
     http:
       paths:
@@ -147,7 +147,7 @@ spec:
             name: backend-service
             port:
               number: 80
-      ...
+      # ...
 ```
 
 ## 2. Setting up TLS for Ingress
