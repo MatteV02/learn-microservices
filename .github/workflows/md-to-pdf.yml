@@ -26,5 +26,5 @@ jobs:
         uses: BaileyJM02/markdown-to-pdf@v1.2.0
         with:
           input_path: ${{inputs.folder}}
-          image_path: ${{inputs.folder}}/images
-          output_path: ${{inputs.folder}}/pdf
+          images_dir: ${{inputs.folder}}/images
+          output_dir: ${{inputs.folder}}/pdf
