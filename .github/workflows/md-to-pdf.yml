@@ -34,7 +34,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           CHANGED_FOLDERS: ${{ steps.changed-files.outputs.all_changed_files }}
-        run: bash .github/scripts/build-pdfs.sh
+        run: bash .github/scripts/build-md-to-pdf.sh
 
       - name: Commit generated PDFs
         if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
