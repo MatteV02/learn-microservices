@@ -1,10 +1,10 @@
-name: Auto Markdown to PDF converter
+name: Auto & Manual Markdown to PDF converter
 
 on:
   push:
     paths:
       - '**/*.md'
-  workflow_dispatch: # Keeps your ability to manually trigger it
+  workflow_dispatch: # Regenerates PDFs for EVERY .md file in the repo
 
 jobs:
   md-to-pdf:
@@ -12,32 +12,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Required to accurately detect changed files
+          fetch-depth: 0
 
-      # STEP 1: Find which folders had Markdown files edited
+      # STEP 1: Track changed files ONLY on automated push events
       - name: Get changed Markdown directories
         id: changed-files
+        if: github.event_name == 'push'
         uses: tj-actions/changed-files@v44
         with:
           files: '**/*.md'
-          dir_names: true # Outputs only the folder paths (e.g., "docs/projectA")
+          dir_names: true
 
-      # STEP 2: Process Mermaid and convert to PDF
+      # STEP 2: Main compilation execution loop
       - name: Process Markdown to PDF
-        if: steps.changed-files.outputs.any_changed == 'true'
+        if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
         run: |
-          # Install both Mermaid and PDF converters globally
           npm install -g @mermaid-js/mermaid-cli md-to-pdf
+          
+          # Sandbox bypass for Mermaid's Puppeteer instance
           echo '{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' > puppeteer-config.json
 
-          # Loop through every folder that triggered the action
-          for folder in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          # DYNAMIC DETERMINATION: Check how this workflow was triggered
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual trigger detected: Scanning whole repo for all Markdown directories..."
+            FOLDERS=$(find . -type f -name "*.md" ! -path '*/.*' -exec dirname {} \; | sort -u)
+          else
+            echo "Push event detected: Processing updated folders only."
+            FOLDERS="${{ steps.changed-files.outputs.all_changed_files }}"
+          fi
+
+          # Loop through targeted folder environments
+          for folder in $FOLDERS; do
+            [ -z "$folder" ] && continue
             echo "Processing folder: $folder"
 
             # --- 1. MERMAID TO IMAGES ---
             mkdir -p "$folder/images"
           
-            # Use nullglob so loop gracefully skips if no .md files are found
             shopt -s nullglob 
             for file in "$folder"/*.md; do
               filename=$(basename "$file")
@@ -51,11 +62,8 @@ jobs:
             done
             shopt -u nullglob
           
-            # Move generated mermaid PNGs to the images subfolder
             mv "$folder"/*.png "$folder/images/" 2>/dev/null || true
-          
-            # Update paths in the markdown
-            sed -i 's|\](\./|\](images/|g' "$folder"/*.md
+            sed -i 's|\](\./|\](images/|g' "$folder"/*.md 2>/dev/null || true
 
             # --- 2. MARKDOWN TO PDF ---
             rm -rf "$folder/pdf"
@@ -65,20 +73,21 @@ jobs:
             for file in "$folder"/*.md; do
               echo "Converting $file to PDF..."
           
-              # Convert using the NPM tool
-              md-to-pdf "$file"
+              # THE FIX: Inject the sandbox bypass directly into the md-to-pdf Puppeteer instance
+              md-to-pdf --launch-options='{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' "$file"
           
-              # Move it to the pdf child folder
               filename=$(basename "$file" .md)
-              mv "$folder/$filename.pdf" "$folder/pdf/"
+              if [ -f "$folder/$filename.pdf" ]; then
+                mv "$folder/$filename.pdf" "$folder/pdf/"
+              fi
             done
             shopt -u nullglob
           done
 
-      # STEP 3: Commit all generated PDFs safely
+      # STEP 3: Commit updates safely back to the repository branch
       - name: Commit generated PDFs
-        if: steps.changed-files.outputs.any_changed == 'true'
+        if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: auto-generate PDFs for updated markdown files"
-          file_pattern: '**/pdf/*.pdf' # Targets any pdf folder nested anywhere
+          commit_message: "chore: regenerate structural PDFs via markdown engine"
+          file_pattern: '**/pdf/*.pdf'
