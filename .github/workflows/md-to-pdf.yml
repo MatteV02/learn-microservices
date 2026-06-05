@@ -20,15 +20,21 @@ jobs:
       - name: Compile Mermaid to Images
         run: |
           npm install -g @mermaid-js/mermaid-cli
-          
-          # Create a Puppeteer config file to disable the sandbox in GitHub Actions
           echo '{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' > puppeteer-config.json
           
-          # Loop through all markdown files in the folder
+          # Ensure the images directory exists
+          mkdir -p ${{ inputs.folder }}/images
+          
           for file in ${{ inputs.folder }}/*.md; do
-            # mmdc replaces mermaid code blocks with image links, using the new config
-            mmdc -i "$file" -o "$file" -p puppeteer-config.json
+            # The -e png flag ensures we get PNGs instead of SVGs
+            mmdc -i "$file" -o "$file" -p puppeteer-config.json -e png
           done
+          
+          # Move the newly generated Mermaid PNGs into the images folder
+          mv ${{ inputs.folder }}/*.png ${{ inputs.folder }}/images/ 2>/dev/null || true
+          
+          # Rewrite the markdown links from ./filename.png to images/filename.png
+          sed -i 's|\](\./\(.*\.png\))|\](images/\1)|g' ${{ inputs.folder }}/*.md
 
       # UPDATED STEP: Generate PDF with the image_import fix
       - name: Markdown to PDF and HTML
@@ -37,7 +43,7 @@ jobs:
           input_path: ${{inputs.folder}}
           images_dir: ${{inputs.folder}}/images
           # CRITICAL: This tells the action to map paths like ./images in your MD to your images directory
-          image_import: ./images
+          image_import: images
           output_dir: ${{inputs.folder}}/pdf
 
       # Save the generated PDFs as a downloadable artifact
