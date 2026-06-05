@@ -1,36 +1,43 @@
-# This is a basic workflow that is manually triggered
 name: Manual Markdown to PDF converter
 
 on:
   workflow_dispatch:
     inputs:
       folder:
-        # Friendly description to be shown in the UI instead of 'name'
         description: 'Path of the folder containing md files to convert'
-        # Input has to be provided for the workflow to run
         required: true
-        # The data type of the input
         type: string
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "greet"
   md-to-pdf:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - uses: actions/checkout@v6
-      # Runs a single command using the runners shell
+      - uses: actions/checkout@v4
+
+      # NEW STEP: Automatically convert Mermaid code blocks to images
+      # This scans your folder, renders the mermaid blocks as SVGs, and updates the markdown.
+      - name: Compile Mermaid to Images
+        run: |
+          npm install -g @mermaid-js/mermaid-cli
+          # Loop through all markdown files in the folder
+          for file in ${{ inputs.folder }}/*.md; do
+            # mmdc replaces mermaid code blocks with image links and outputs a new file
+            mmdc -i "$file" -o "$file"
+          done
+
+      # UPDATED STEP: Generate PDF with the image_import fix
       - name: Markdown to PDF and HTML
         uses: BaileyJM02/markdown-to-pdf@v1.2.0
         with:
           input_path: ${{inputs.folder}}
           images_dir: ${{inputs.folder}}/images
+          # CRITICAL: This tells the action to map paths like ./images in your MD to your images directory
+          image_import: ./images
           output_dir: ${{inputs.folder}}/pdf
-      - name: Commit generated PDFs
-        uses: stefanzweifel/git-auto-commit-action@v5
+
+      # Save the generated PDFs as a downloadable artifact
+      - name: Upload PDF Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          commit_message: "chore: add generated PDFs for ${{ inputs.folder }}"
-          file_pattern: ${{inputs.folder}}/pdf/*.pdf
+          name: converted-pdfs
+          path: ${{inputs.folder}}/pdf
