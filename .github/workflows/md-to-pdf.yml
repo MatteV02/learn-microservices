@@ -16,13 +16,18 @@ jobs:
 
       # NEW STEP: Automatically convert Mermaid code blocks to images
       # This scans your folder, renders the mermaid blocks as SVGs, and updates the markdown.
+      # UPDATED STEP: Automatically convert Mermaid code blocks to images with sandbox disabled
       - name: Compile Mermaid to Images
         run: |
           npm install -g @mermaid-js/mermaid-cli
+          
+          # Create a Puppeteer config file to disable the sandbox in GitHub Actions
+          echo '{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' > puppeteer-config.json
+          
           # Loop through all markdown files in the folder
           for file in ${{ inputs.folder }}/*.md; do
-            # mmdc replaces mermaid code blocks with image links and outputs a new file
-            mmdc -i "$file" -o "$file"
+            # mmdc replaces mermaid code blocks with image links, using the new config
+            mmdc -i "$file" -o "$file" -p puppeteer-config.json
           done
 
       # UPDATED STEP: Generate PDF with the image_import fix
@@ -36,8 +41,8 @@ jobs:
           output_dir: ${{inputs.folder}}/pdf
 
       # Save the generated PDFs as a downloadable artifact
-      - name: Upload PDF Artifacts
-        uses: actions/upload-artifact@v4
+      - name: Commit generated PDFs
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          name: converted-pdfs
-          path: ${{inputs.folder}}/pdf
+          commit_message: "chore: add generated PDFs for ${{ inputs.folder }}"
+          file_pattern: ${{inputs.folder}}/pdf/*.pdf
