@@ -1,81 +1,84 @@
-name: Manual Markdown to PDF converter
+name: Auto Markdown to PDF converter
 
 on:
-  workflow_dispatch:
-    inputs:
-      folder:
-        description: 'Path of the folder containing md files to convert'
-        required: true
-        type: string
+  push:
+    paths:
+      - '**/*.md'
+  workflow_dispatch: # Keeps your ability to manually trigger it
 
 jobs:
   md-to-pdf:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      # NEW STEP: Automatically convert Mermaid code blocks to images
-      # This scans your folder, renders the mermaid blocks as SVGs, and updates the markdown.
-      # UPDATED STEP: Automatically convert Mermaid code blocks to images with sandbox disabled
-      # UPDATED STEP: Generate Mermaid images with space-free filenames
-      - name: Compile Mermaid to Images
-        run: |
-          npm install -g @mermaid-js/mermaid-cli
-          echo '{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' > puppeteer-config.json
-          
-          # Ensure the images directory exists
-          mkdir -p ${{ inputs.folder }}/images
-          
-          for file in ${{ inputs.folder }}/*.md; do
-            filename=$(basename "$file")
-            safename=$(echo "$filename" | tr ' ' '_')
-          
-            mmdc -i "$file" -o "${{ inputs.folder }}/$safename" -p puppeteer-config.json -e png -s 4
-          
-            if [ "$filename" != "$safename" ]; then
-              mv "${{ inputs.folder }}/$safename" "$file"
-            fi
-          done
-          
-          # Move the newly generated (spaceless) Mermaid PNGs into the images folder
-          mv ${{ inputs.folder }}/*.png ${{ inputs.folder }}/images/ 2>/dev/null || true
-          
-          # 4. Clean up the paths in the markdown (simply swap ./ for images/)
-          sed -i 's|\](\./|\](images/|g' ${{ inputs.folder }}/*.md
-
-      - name: Clear old PDF folder
-        run: |
-          rm -rf ${{ inputs.folder }}/pdf
-          mkdir -p ${{ inputs.folder }}/pdf
-
-      # UPDATED STEP: Generate PDF with the image_import fix
-      - name: Markdown to PDF and HTML
-        uses: BaileyJM02/markdown-to-pdf@v1.2.0
         with:
-          input_path: ${{inputs.folder}}
-          images_dir: ${{inputs.folder}}/images
-          image_import: images
+          fetch-depth: 0 # Required to accurately detect changed files
 
-      # UPDATED STEP: Hunt down the PDFs and move them
-      - name: Organize generated PDFs
+      # STEP 1: Find which folders had Markdown files edited
+      - name: Get changed Markdown directories
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: '**/*.md'
+          dir_names: true # Outputs only the folder paths (e.g., "docs/projectA")
+
+      # STEP 2: Process Mermaid and convert to PDF
+      - name: Process Markdown to PDF
+        if: steps.changed-files.outputs.any_changed == 'true'
         run: |
-          echo "Hunting down generated PDFs..."
+          # Install both Mermaid and PDF converters globally
+          npm install -g @mermaid-js/mermaid-cli md-to-pdf
+          echo '{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' > puppeteer-config.json
 
-          # FIX: Target ONLY the specific folder the Docker container created
-          sudo chown -R $(whoami):$(whoami) ./built
+          # Loop through every folder that triggered the action
+          for folder in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "Processing folder: $folder"
 
-          # Move the PDFs directly from the built folder to your target folder
-          mv ./built/*.pdf ${{ inputs.folder }}/pdf/
+            # --- 1. MERMAID TO IMAGES ---
+            mkdir -p "$folder/images"
+          
+            # Use nullglob so loop gracefully skips if no .md files are found
+            shopt -s nullglob 
+            for file in "$folder"/*.md; do
+              filename=$(basename "$file")
+              safename=$(echo "$filename" | tr ' ' '_')
+          
+              mmdc -i "$file" -o "$folder/$safename" -p puppeteer-config.json -e png -s 4
+          
+              if [ "$filename" != "$safename" ]; then
+                mv "$folder/$safename" "$file"
+              fi
+            done
+            shopt -u nullglob
+          
+            # Move generated mermaid PNGs to the images subfolder
+            mv "$folder"/*.png "$folder/images/" 2>/dev/null || true
+          
+            # Update paths in the markdown
+            sed -i 's|\](\./|\](images/|g' "$folder"/*.md
 
-          # Clean up the entire leftover built folder (which takes care of the .html files too)
-          rm -rf ./built
+            # --- 2. MARKDOWN TO PDF ---
+            rm -rf "$folder/pdf"
+            mkdir -p "$folder/pdf"
 
-          echo "Verify files are in the right place:"
-          ls -la ${{ inputs.folder }}/pdf/
+            shopt -s nullglob
+            for file in "$folder"/*.md; do
+              echo "Converting $file to PDF..."
+          
+              # Convert using the NPM tool
+              md-to-pdf "$file"
+          
+              # Move it to the pdf child folder
+              filename=$(basename "$file" .md)
+              mv "$folder/$filename.pdf" "$folder/pdf/"
+            done
+            shopt -u nullglob
+          done
 
-      # Save the generated PDFs as a downloadable artifact
+      # STEP 3: Commit all generated PDFs safely
       - name: Commit generated PDFs
+        if: steps.changed-files.outputs.any_changed == 'true'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: add generated PDFs for ${{ inputs.folder }}"
-          file_pattern: ${{inputs.folder}}/pdf/*.pdf
+          commit_message: "chore: auto-generate PDFs for updated markdown files"
+          file_pattern: '**/pdf/*.pdf' # Targets any pdf folder nested anywhere
