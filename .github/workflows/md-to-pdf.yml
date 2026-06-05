@@ -35,7 +35,7 @@ jobs:
           
           # 3. Config for Continuous Vertical Scroll
           # Sets a standard width (210mm) but a massive height (5000mm) to prevent page breaks
-          echo '{ "pdf_options": { "format": "", "width": "210mm", "height": "5000mm", "margin": "0", "printBackground": true } }' > config-scroll.json
+          echo '{ "pdf_options": { "format": "", "width": "210mm", "height": "5000mm", "margin": "10mm", "printBackground": true } }' > config-scroll.json
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             FOLDERS=$(find . -type f -name "*.md" ! -path '*/.*' -exec dirname {} \; | sort -u)
