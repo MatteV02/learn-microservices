@@ -11,7 +11,7 @@ echo '{ "pdf_options": { "format": "A4", "margin": "10mm" } }' > config-standard
 echo '{ "pdf_options": { "format": "", "width": "210mm", "height": "5000mm", "margin": "10mm", "printBackground": true } }' > config-scroll.json
 
 if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-  FOLDERS=$(find . -type f -name "*.md" ! -path '*/.*' -exec dirname {} \; | sort -u)
+  FOLDERS=$(find . -type f -name "*.md" ! -path '*/.*' ! -path '*/node_modules/*' -exec dirname {} \; | sort -u)
 else
   FOLDERS="$CHANGED_FOLDERS"
 fi
