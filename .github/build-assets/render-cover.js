@@ -15,8 +15,8 @@ const path = require('path');
     // Force 16x9 and background graphics
     await page.pdf({
         path: pdfPath,
-        width: '16in',
-        height: '9in',
+        width: '210mm',
+        height: '118mm',
         printBackground: true,
         margin: { top: 0, right: 0, bottom: 0, left: 0 }
     });
