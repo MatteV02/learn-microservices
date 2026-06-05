@@ -17,6 +17,7 @@ jobs:
       # NEW STEP: Automatically convert Mermaid code blocks to images
       # This scans your folder, renders the mermaid blocks as SVGs, and updates the markdown.
       # UPDATED STEP: Automatically convert Mermaid code blocks to images with sandbox disabled
+      # UPDATED STEP: Generate Mermaid images with space-free filenames
       - name: Compile Mermaid to Images
         run: |
           npm install -g @mermaid-js/mermaid-cli
@@ -26,15 +27,21 @@ jobs:
           mkdir -p ${{ inputs.folder }}/images
           
           for file in ${{ inputs.folder }}/*.md; do
-            # The -e png flag ensures we get PNGs instead of SVGs
-            mmdc -i "$file" -o "$file" -p puppeteer-config.json -e png
+            filename=$(basename "$file")
+            safename=$(echo "$filename" | tr ' ' '_')
+          
+            mmdc -i "$file" -o "${{ inputs.folder }}/$safename" -p puppeteer-config.json -e png
+          
+            if [ "$filename" != "$safename" ]; then
+              mv "${{ inputs.folder }}/$safename" "$file"
+            fi
           done
           
-          # Move the newly generated Mermaid PNGs into the images folder
+          # Move the newly generated (spaceless) Mermaid PNGs into the images folder
           mv ${{ inputs.folder }}/*.png ${{ inputs.folder }}/images/ 2>/dev/null || true
           
-          # Rewrite the markdown links from ./filename.png to images/filename.png
-          sed -i 's|\](\./\(.*\.png\))|\](images/\1)|g' ${{ inputs.folder }}/*.md
+          # 4. Clean up the paths in the markdown (simply swap ./ for images/)
+          sed -i 's|\](\./|\](images/|g' ${{ inputs.folder }}/*.md
 
       - name: Clear old PDF folder
         run: |
