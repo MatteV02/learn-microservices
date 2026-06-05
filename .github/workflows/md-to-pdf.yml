@@ -42,7 +42,7 @@ jobs:
 
           # NEW: 4. Config for 16:9 Landscape Cover
           # Strips out default markdown padding and forces a 16:9 aspect ratio page size with 0 margins
-          echo '{ "css": "body { padding: 0 !important; margin: 0 !important; }", "pdf_options": { "width": "16in", "height": "9in", "printBackground": true, "margin": "0" } }' > config-cover.json
+          echo '{ "body_class": [], "pdf_options": { "width": "16in", "height": "9in", "printBackground": true, "margin": { "top": 0, "right": 0, "bottom": 0, "left": 0 } } }' > config-cover.json
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             FOLDERS=$(find . -type f -name "*.md" ! -path '*/.*' -exec dirname {} \; | sort -u)
@@ -77,12 +77,11 @@ jobs:
               echo "Found cover.html in $folder. Compiling as 16:9 cover..."
               HAS_COVER=true
           
-              # md-to-pdf accepts raw HTML syntax smoothly inside .md extensions.
-              cp "$folder/cover.html" "$folder/temp_cover.md"
-              md-to-pdf --config-file config-cover.json --launch-options='{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' "$folder/temp_cover.md"
+              # Pass the HTML directly to md-to-pdf. Do NOT convert to .md.
+              md-to-pdf --config-file config-cover.json --launch-options='{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' "$folder/cover.html"
           
-              mv "$folder/temp_cover.pdf" "$COVER_PDF"
-              rm "$folder/temp_cover.md"
+              # md-to-pdf will output cover.pdf by default
+              mv "$folder/cover.pdf" "$COVER_PDF"
             fi
 
             # --- 2. MARKDOWN TO PDF (DUAL GENERATION) ---

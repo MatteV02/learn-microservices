@@ -5,18 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document Cover</title>
     <style>
-        /* Reset margins and lock dimensions to ensure edge-to-edge
-           printing in Puppeteer without accidental blank pages
-        */
+        /* Force the PDF engine to use 16:9 Landscape */
+        @page {
+            size: 16in 9in;
+            margin: 0;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-print-color-adjust: exact; /* Forces background colors to print */
+            print-color-adjust: exact;
         }
 
         body, html {
-            width: 100vw;
-            height: 100vh;
+            width: 16in;
+            height: 9in;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: #ffffff;
             overflow: hidden;
@@ -25,8 +30,8 @@
         /* Main container covering the full 16:9 area */
         .cover-wrapper {
             display: flex;
-            width: 100%;
-            height: 100%;
+            width: 16in;
+            height: 9in;
         }
 
         /* Left Side: Typography & Branding */
@@ -36,7 +41,7 @@
             flex-direction: column;
             justify-content: center;
             padding: 80px;
-            background-color: #1a1a2e; /* Dark elegant background */
+            background-color: #1a1a2e;
             color: #ffffff;
         }
 
@@ -58,13 +63,13 @@
             margin-top: auto;
             font-size: 1.2rem;
             color: #8b8b99;
-            border-left: 4px solid #e94560; /* Accent color line */
+            border-left: 4px solid #e94560;
             padding-left: 15px;
         }
 
         /* Right Side: The Picture */
         .image-section {
-            flex: 1.2; /* Gives the image slightly more screen real estate */
+            flex: 1.2;
             position: relative;
             background-color: #000000;
         }
@@ -72,7 +77,6 @@
         .cover-image {
             width: 100%;
             height: 100%;
-            /* object-fit ensures the image fills the space without stretching/distortion */
             object-fit: cover;
             object-position: center;
         }
