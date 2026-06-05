@@ -21,6 +21,7 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - uses: actions/checkout@v3
       # Runs a single command using the runners shell
       - name: Markdown to PDF and HTML
         uses: BaileyJM02/markdown-to-pdf@v1.2.0
