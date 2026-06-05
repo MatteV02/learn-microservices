@@ -14,7 +14,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # STEP 1: Track changed files ONLY on automated push events
       - name: Get changed Markdown directories
         id: changed-files
         if: github.event_name == 'push'
@@ -23,14 +22,17 @@ jobs:
           files: '**/*.md'
           dir_names: true
 
-      # STEP 2: Main compilation execution loop
       - name: Process Markdown to PDF
         if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
         run: |
           npm install -g @mermaid-js/mermaid-cli md-to-pdf
           
-          # Sandbox bypass for Mermaid's Puppeteer instance
+          # 1. Config for Mermaid's sandbox bypass
           echo '{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' > puppeteer-config.json
+          
+          # 2. Config for md-to-pdf styling (Tight Margins)
+          # You can adjust "10mm" to "0.5in" or any CSS-valid spacing
+          echo '{ "pdf_options": { "margin": "10mm" } }' > md-to-pdf-config.json
 
           # DYNAMIC DETERMINATION: Check how this workflow was triggered
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -71,10 +73,10 @@ jobs:
 
             shopt -s nullglob
             for file in "$folder"/*.md; do
-              echo "Converting $file to PDF..."
+              echo "Converting $file to PDF with tight margins..."
           
-              # THE FIX: Inject the sandbox bypass directly into the md-to-pdf Puppeteer instance
-              md-to-pdf --launch-options='{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' "$file"
+              # THE MARGIN FIX: Appended --config-file to the execution command
+              md-to-pdf --config-file md-to-pdf-config.json --launch-options='{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' "$file"
           
               filename=$(basename "$file" .md)
               if [ -f "$folder/$filename.pdf" ]; then
@@ -84,7 +86,6 @@ jobs:
             shopt -u nullglob
           done
 
-      # STEP 3: Commit updates safely back to the repository branch
       - name: Commit generated PDFs
         if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
         uses: stefanzweifel/git-auto-commit-action@v5
