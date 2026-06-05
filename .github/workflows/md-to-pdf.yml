@@ -47,9 +47,11 @@ jobs:
         with:
           input_path: ${{inputs.folder}}
           images_dir: ${{inputs.folder}}/images
-          # CRITICAL: This tells the action to map paths like ./images in your MD to your images directory
           image_import: images
-          output_dir: ${{inputs.folder}}/pdf
+
+      - name: Organize generated PDFs
+        run: |
+          mv ${{ inputs.folder }}/*.pdf ${{ inputs.folder }}/pdf/ 2>/dev/null || true
 
       # Save the generated PDFs as a downloadable artifact
       - name: Commit generated PDFs
