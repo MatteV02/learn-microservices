@@ -30,7 +30,7 @@ jobs:
             filename=$(basename "$file")
             safename=$(echo "$filename" | tr ' ' '_')
           
-            mmdc -i "$file" -o "${{ inputs.folder }}/$safename" -p puppeteer-config.json -e png
+            mmdc -i "$file" -o "${{ inputs.folder }}/$safename" -p puppeteer-config.json -e png -s 4
           
             if [ "$filename" != "$safename" ]; then
               mv "${{ inputs.folder }}/$safename" "$file"
