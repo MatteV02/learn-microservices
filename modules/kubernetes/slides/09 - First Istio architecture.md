@@ -69,6 +69,7 @@ To adapt the existing system to fit an Istio-enabled Kubernetes cluster, we need
 Now that the container images are ready, we will define the Kubernetes YAML manifests. Each microservice is deployed 
 using a `Deployment` and exposed internally via a `Service`.
 Here is an example for the `bff-service`:
+
 ```yaml
 apiVersion: v1
 kind: Service
