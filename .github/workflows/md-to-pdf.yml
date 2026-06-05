@@ -36,6 +36,11 @@ jobs:
           # Rewrite the markdown links from ./filename.png to images/filename.png
           sed -i 's|\](\./\(.*\.png\))|\](images/\1)|g' ${{ inputs.folder }}/*.md
 
+      - name: Clear old PDF folder
+        run: |
+          rm -rf ${{ inputs.folder }}/pdf
+          mkdir -p ${{ inputs.folder }}/pdf
+
       # UPDATED STEP: Generate PDF with the image_import fix
       - name: Markdown to PDF and HTML
         uses: BaileyJM02/markdown-to-pdf@v1.2.0
