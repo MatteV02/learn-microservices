@@ -10,7 +10,7 @@ jobs:
   md-to-pdf:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -24,7 +24,7 @@ jobs:
       - name: Get changed Markdown directories
         id: changed-files
         if: github.event_name == 'push'
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v47
         with:
           files: '**/*.md'
           dir_names: true
@@ -38,7 +38,7 @@ jobs:
 
       - name: Commit generated PDFs
         if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "chore: regenerate standard and continuous scroll PDFs with dynamic cover arts"
           file_pattern: '**/pdf-*/*.pdf'

@@ -56,7 +56,7 @@ for folder in $FOLDERS; do
       sed "s/LESSON_TITLE/$filename/g" "$folder/cover.html" > "$folder/temp_cover.html"
 
       # Run Puppeteer against the temporary HTML file
-      node render-cover.js "$folder/temp_cover.html" "$COVER_PDF"
+      node .github/build-assets/render-cover.js "$folder/temp_cover.html" "$COVER_PDF"
     fi
 
     # A. Generate Standard Layout
