@@ -2,7 +2,7 @@
 
 ## Introducing Kubernetes
 
-**Kubernetes** (Greek for helmsman) is a software system for automating the deployment and management of complex, large-scale 
+**Kubernetes** (Greek for _helmsman_) is a software system for automating the deployment and management of complex, large-scale 
 application systems composed of computer processes running in containers. While you act as the captain deciding the 
 system's overall direction, Kubernetes acts as the helmsman that steers the applications and reports on their operational status.  
 ![kubernetes-logo](images/kubernetes-logo.png)
