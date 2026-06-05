@@ -23,6 +23,7 @@ balancing properties such as exposed ports, protocols, and TLS settings.
 ### YAML Declaration
 Instead of adding application-layer traffic routing (`Layer 7`) directly to the gateway, Istio lets you bind a regular 
 Virtual Service to the gateway. Here is an example of an ingress gateway configured to accept external HTTPS traffic:
+
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: Gateway
@@ -87,6 +88,7 @@ workloads that implement the service.
 ### YAML Declaration
 The following virtual service routes traffic to different versions of a reviews service depending on whether the request 
 comes from a specific user:
+
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -128,6 +130,7 @@ The http section contains the routing rules that dictate how traffic is evaluate
     differently than POST or DELETE requests.
   - **Query Parameters**: Routing can be based on the key-value pairs in the URL query string.
   - **Port Matches**: If your service exposes multiple ports, you can specify rules that only apply to traffic entering on a specific port.
+
 ```yaml
 http:
   - match:
@@ -153,6 +156,7 @@ http:
   must be a real destination in Istio's service registry.
   - **Host and Subset**: The host must be a fully qualified domain name (**FQDN**) or a recognized Kubernetes service name. The subset maps back to the groupings defined in your `DestinationRule`.
   - **Weighted Routing**: You can assign a `weight` (an integer percentage) to multiple destinations within a single rule. For example, you can route 90% of traffic to your `v1` subset and 10% to your `v2` subset. This is the foundation of canary deployments in Istio.
+
 ```yaml
 http:
   - route:
@@ -169,6 +173,7 @@ http:
 ```
 - **Traffic manipulation**: Routing rules are not limited to just forwarding traffic. They can also manipulate the request transparently before it reaches the destination.
   - **HTTP Redirects**: You can instruct the Envoy proxy to return an HTTP redirect (like a 301 or 302 status code) to the client, pointing them to a completely different URI or `authority/host`.
+
 ```yaml
 http:
   - match:
@@ -182,6 +187,7 @@ http:
 ```
 - 
   - **HTTP Rewrites**: Unlike a redirect, a rewrite happens transparently. The Envoy proxy modifies the URI path or the Authority/Host header of the request before sending it to the backend service. The client remains completely unaware that the internal path changed.
+
 ```yaml
 http:
   - match:
@@ -197,6 +203,7 @@ http:
 ```
 - 
   - **Header Manipulation**: You can append, modify, or remove HTTP headers from a request before it is forwarded, or from a response before it is returned to the client.
+
 ```yaml
 http:
   - route:
@@ -220,6 +227,7 @@ http:
   - **The Catch-All Default**: The final rule in your HTTP block should almost always omit the match field entirely. This ensures that any traffic failing to trigger your specific rules still has a default destination and isn't dropped.
 
 **Example**  
+
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -313,6 +321,7 @@ reaches that destination. They are applied after virtual service routing rules a
 
 ### YAML Declaration
 Here is an example of a Destination Rule configuring subsets and assigning different load balancing options:
+
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
@@ -360,6 +369,7 @@ independent of your application logic.
 A timeout dictates the maximum amount of time an Envoy proxy should wait for a reply from a given service. Configuring 
 timeouts ensures calls succeed or fail within a predictable window rather than hanging indefinitely. You can configure 
 timeouts dynamically on a per-service basis via a Virtual Service:
+
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -380,6 +390,7 @@ spec:
 Retries improve service availability by specifying the maximum number of times an Envoy proxy should attempt to connect 
 to a service if the initial call fails. Istio handles the interval between retries automatically to ensure the failing 
 service isn’t overwhelmed by traffic.
+
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -402,6 +413,7 @@ spec:
 Circuit breaking is a technique to prevent localized transient failures from cascading to other nodes in the mesh. 
 Circuit breakers are configured in DestinationRule resources. You can limit the impact of failures by restricting the 
 number of concurrent connections or requests allowed to a service:
+
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
@@ -429,6 +441,7 @@ You can inject two types of faults using a Virtual Service:
 - **Aborts**: Crash failures that mimic upstream service failures by returning HTTP error codes.
 
 Example of injecting a 5-second delay for 30% of requests:
+
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -450,6 +463,7 @@ spec:
 ```
 
 Example of injecting a 404 error for 30% of requests:
+
 ```yaml
 apiVersion: networking.istio.io/v1
 kind: VirtualService
