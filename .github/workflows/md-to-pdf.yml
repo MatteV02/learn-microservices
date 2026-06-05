@@ -4,13 +4,13 @@ on:
   push:
     paths:
       - '**/*.md'
-  workflow_dispatch: # Regenerates PDFs for EVERY .md file in the repo
+  workflow_dispatch:
 
 jobs:
   md-to-pdf:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -27,37 +27,33 @@ jobs:
         run: |
           npm install -g @mermaid-js/mermaid-cli md-to-pdf
           
-          # 1. Config for Mermaid's sandbox bypass
+          # 1. Config for Mermaid
           echo '{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' > puppeteer-config.json
           
-          # 2. Config for md-to-pdf styling (Tight Margins)
-          # You can adjust "10mm" to "0.5in" or any CSS-valid spacing
-          echo '{ "pdf_options": { "margin": "10mm" } }' > md-to-pdf-config.json
+          # 2. Config for Standard A4 Document
+          echo '{ "pdf_options": { "format": "A4", "margin": "10mm" } }' > config-standard.json
+          
+          # 3. Config for Continuous Vertical Scroll
+          # Sets a standard width (210mm) but a massive height (5000mm) to prevent page breaks
+          echo '{ "pdf_options": { "width": "210mm", "height": "5000mm", "margin": "0", "printBackground": true } }' > config-scroll.json
 
-          # DYNAMIC DETERMINATION: Check how this workflow was triggered
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Manual trigger detected: Scanning whole repo for all Markdown directories..."
             FOLDERS=$(find . -type f -name "*.md" ! -path '*/.*' -exec dirname {} \; | sort -u)
           else
-            echo "Push event detected: Processing updated folders only."
             FOLDERS="${{ steps.changed-files.outputs.all_changed_files }}"
           fi
 
-          # Loop through targeted folder environments
           for folder in $FOLDERS; do
             [ -z "$folder" ] && continue
             echo "Processing folder: $folder"
 
             # --- 1. MERMAID TO IMAGES ---
             mkdir -p "$folder/images"
-          
             shopt -s nullglob 
             for file in "$folder"/*.md; do
               filename=$(basename "$file")
               safename=$(echo "$filename" | tr ' ' '_')
-          
               mmdc -i "$file" -o "$folder/$safename" -p puppeteer-config.json -e png -s 4
-          
               if [ "$filename" != "$safename" ]; then
                 mv "$folder/$safename" "$file"
               fi
@@ -67,20 +63,25 @@ jobs:
             mv "$folder"/*.png "$folder/images/" 2>/dev/null || true
             sed -i 's|\](\./|\](images/|g' "$folder"/*.md 2>/dev/null || true
 
-            # --- 2. MARKDOWN TO PDF ---
-            rm -rf "$folder/pdf"
-            mkdir -p "$folder/pdf"
+            # --- 2. MARKDOWN TO PDF (DUAL GENERATION) ---
+            rm -rf "$folder/pdf?*"
+            mkdir -p "$folder/pdf-standard" "$folder/pdf-scroll"
 
             shopt -s nullglob
             for file in "$folder"/*.md; do
-              echo "Converting $file to PDF with tight margins..."
-          
-              # THE MARGIN FIX: Appended --config-file to the execution command
-              md-to-pdf --config-file md-to-pdf-config.json --launch-options='{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' "$file"
-          
+              echo "Converting $file..."
               filename=$(basename "$file" .md)
+          
+              # A. Generate Standard Layout
+              md-to-pdf --config-file config-standard.json --launch-options='{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' "$file"
               if [ -f "$folder/$filename.pdf" ]; then
-                mv "$folder/$filename.pdf" "$folder/pdf/"
+                mv "$folder/$filename.pdf" "$folder/pdf-standard/"
+              fi
+          
+              # B. Generate Continuous Scroll Layout
+              md-to-pdf --config-file config-scroll.json --launch-options='{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}' "$file"
+              if [ -f "$folder/$filename.pdf" ]; then
+                mv "$folder/$filename.pdf" "$folder/pdf-scroll/"
               fi
             done
             shopt -u nullglob
@@ -88,7 +89,7 @@ jobs:
 
       - name: Commit generated PDFs
         if: github.event_name == 'workflow_dispatch' || steps.changed-files.outputs.any_changed == 'true'
-        uses: stefanzweifel/git-auto-commit-action@v7
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: regenerate structural PDFs via markdown engine"
-          file_pattern: '**/pdf/*.pdf'
+          commit_message: "chore: regenerate standard and continuous scroll PDFs"
+          file_pattern: '**/pdf-*/*.pdf'
