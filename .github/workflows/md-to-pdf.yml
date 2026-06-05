@@ -35,7 +35,7 @@ jobs:
           
           # 3. Config for Continuous Vertical Scroll
           # Sets a standard width (210mm) but a massive height (5000mm) to prevent page breaks
-          echo '{ "pdf_options": { "width": "210mm", "height": "5000mm", "margin": "0", "printBackground": true } }' > config-scroll.json
+          echo '{ "pdf_options": { "format": "", "width": "210mm", "height": "5000mm", "margin": "0", "printBackground": true } }' > config-scroll.json
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             FOLDERS=$(find . -type f -name "*.md" ! -path '*/.*' -exec dirname {} \; | sort -u)
@@ -64,7 +64,7 @@ jobs:
             sed -i 's|\](\./|\](images/|g' "$folder"/*.md 2>/dev/null || true
 
             # --- 2. MARKDOWN TO PDF (DUAL GENERATION) ---
-            rm -rf "$folder/pdf?*"
+            rm -rf "$folder/pdf-standard" "$folder/pdf-scroll"
             mkdir -p "$folder/pdf-standard" "$folder/pdf-scroll"
 
             shopt -s nullglob
