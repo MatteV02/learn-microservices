@@ -21,7 +21,7 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       # Runs a single command using the runners shell
       - name: Markdown to PDF and HTML
         uses: BaileyJM02/markdown-to-pdf@v1.2.0
@@ -29,3 +29,8 @@ jobs:
           input_path: ${{inputs.folder}}
           images_dir: ${{inputs.folder}}/images
           output_dir: ${{inputs.folder}}/pdf
+      - name: Commit generated PDFs
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: add generated PDFs for ${{ inputs.folder }}"
+          file_pattern: ${{inputs.folder}}/pdf/*.pdf
