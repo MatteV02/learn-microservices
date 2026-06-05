@@ -153,6 +153,7 @@ A more robust and scalable way to manage a Kubernetes cluster is by writing decl
 
 For example, this single configuration file replaces all the individual commands we ran in the previous steps. You can 
 save this as `chassis-demo.yaml`:
+
 ```yaml
 ---
 # 1. PersistentVolumeClaim (The request for storage)
