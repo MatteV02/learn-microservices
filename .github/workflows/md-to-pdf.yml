@@ -49,9 +49,20 @@ jobs:
           images_dir: ${{inputs.folder}}/images
           image_import: images
 
+            # UPDATED STEP: Hunt down the PDFs wherever they hid and move them
       - name: Organize generated PDFs
         run: |
-          mv ${{ inputs.folder }}/*.pdf ${{ inputs.folder }}/pdf/ 2>/dev/null || true
+          echo "Hunting down generated PDFs..."
+          
+          # Find ANY .pdf file in the workspace (ignoring the target pdf folder itself) 
+          # and move them directly into your specific pdf folder
+          find . -name "*.pdf" -not -path "*/pdf/*" -exec mv {} ${{ inputs.folder }}/pdf/ \;
+          
+          # (Optional) Clean up the leftover .html files the action automatically generates
+          find . -name "*.html" -exec rm -f {} \;
+          
+          echo "Verify files are in the right place:"
+          ls -la ${{ inputs.folder }}/pdf/
 
       # Save the generated PDFs as a downloadable artifact
       - name: Commit generated PDFs
