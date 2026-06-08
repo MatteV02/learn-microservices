@@ -50,7 +50,7 @@ spec:
 ```
 Then add the following PromQL query to the dashboard:
 ```
-sum(rate(istio_requests_total{reporter="destination"}[5m])) by (customer_segment)
+sum(rate(istio_requests_total{reporter="destination"}[5m])) by (beta_users)
 ```
 ![PromQL](images/promql.png)
 

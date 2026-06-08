@@ -108,6 +108,7 @@ kind: Ingress
 metadata:
   name: chassis-demo-ingress
 spec:
+  ingressClassName: traefik
   rules:
     - host: chassis.local
       http:

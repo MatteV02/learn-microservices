@@ -152,14 +152,14 @@ spec:
 
 ## 2. Setting up TLS for Ingress
 To secure external traffic, we configure the Ingress proxy to handle TLS termination. The proxy intercepts the encrypted 
-HTTPS traffic, decrypts it, and forwards plain HTTP to the backend pods.
-**Step 1: Create a TLS Secret**
+HTTPS traffic, decrypts it, and forwards plain HTTP to the backend pods.  
+**Step 1: Create a TLS Secret**  
 The proxy requires a certificate and private key. We store these securely in a Kubernetes `Secret`.
 ```shell
 kubectl create secret tls tls-example-com --cert=example.crt --key=example.key
 ```
 
-**Step 2: Attach Secret to Ingress**
+**Step 2: Attach Secret to Ingress**  
 We update our Ingress YAML by adding a `tls` block to the `spec` section. The `hosts` listed under tls must match the 
 names on your certificate.
 ```yaml

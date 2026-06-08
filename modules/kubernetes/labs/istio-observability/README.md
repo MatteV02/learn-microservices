@@ -10,7 +10,7 @@ kubectl apply -f telemetry.yaml
 
 Then open Grafana dashboard (by running `istioctl dashboard grafana`) and add the following PromQL query to the dashboard:
 ```
-sum(rate(istio_requests_total{reporter="destination"}[5m])) by (customer_segment)
+sum(rate(istio_requests_total{reporter="destination"}[5m])) by (beta_users)
 ```
 
 Please refer to the [lesson content](../../slides/10%20-%20Istio%20observability.md) for details.

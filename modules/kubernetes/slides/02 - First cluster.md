@@ -91,7 +91,7 @@ kubectl expose deployment postgres --port=5432
 
 6. Create `product-service` Deployment
 ```shell
-kubectl create deployment product-service --image=$DOCKER_USERNAME/product-service --port=8080
+kubectl create deployment product-service --image=$DOCKER_USERNAME/product-service
 kubectl set env deployment/product-service SPRING_PROFILES_ACTIVE=docker SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/jdbc_schema
 ```
 

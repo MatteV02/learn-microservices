@@ -38,23 +38,23 @@ spec:
     - app-gateway
   http:
     # 1. The BFF Route (with error rate)
-    - match:
-        - uri:
-            prefix: /bff
-          headers:
-            x-beta-version:
-              exact: "True"
-      fault:
-        abort:
-          httpStatus: 404
-          percentage:
-            value: 30.0
-      route:
-        - destination:
-            host: bff-service
-            subset: v2
-            port:
-              number: 8080
+#    - match:
+#        - uri:
+#            prefix: /bff
+#          headers:
+#            x-beta-version:
+#              exact: "True"
+#      fault:
+#        abort:
+#          httpStatus: 404
+#          percentage:
+#            value: 30.0
+#      route:
+#        - destination:
+#            host: bff-service
+#            subset: v2
+#            port:
+#              number: 8080
 
     - match:
         - uri:

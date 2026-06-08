@@ -27,7 +27,7 @@ Please refer to the [lesson content](../../slides/05%20-%20Services.md) for deta
 `k3d` conflicts with it by default because it uses `traefik` in its control plane. To successfully install MetalLB you
 need to start a fresh cluster with `traefik` disabled.
 ```shell
-k3d cluster create --api-port 6550 --agents 2 --k3s-arg '--disable=traefik@server:*' metallb-cluster
+k3d cluster create metallb-cluster --api-port 6550 --agents 2 --k3s-arg "--disable=servicelb@server:*"
 ```
 
 It is suggested to install MetalLB via **Helm**, a "packet manager" for your cluster. To install Helm follow the installation

@@ -5,6 +5,8 @@ metadata:
 spec:
   type: LoadBalancer
 
+  loadBalancerIP: "172.21.0.201"
+
   # Standard service routing
   selector:
     app: product-service

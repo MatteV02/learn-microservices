@@ -162,7 +162,7 @@ sudo apt-get install helm
 ### Istio installation
 1. Create cluster with the following command
 ```shell
-k3d cluster create --api-port 6550 --agents 2 --k3s-arg '--disable=traefik@server:*' istio-cluster
+k3d cluster create --api-port 6550 --agents 2 --k3s-arg "--disable=servicelb@server:*" istio-cluster
 ```
 
 2. Install `istio` with `k3d`
